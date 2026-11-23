@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.ObjectIdResolver;
 import tools.jackson.core.*;
 import tools.jackson.databind.*;
 import tools.jackson.databind.cfg.HandlerInstantiator;
+import tools.jackson.databind.util.ExternalObjectIdHandler;
 import tools.jackson.databind.deser.ReadableObjectId.Referring;
 import tools.jackson.databind.introspect.Annotated;
 import tools.jackson.databind.util.ClassUtil;
@@ -117,6 +118,14 @@ public abstract class DeserializationContextExt
 
         ReadableObjectId entry = createReadableObjectId(key);
         entry.setResolver(resolver);
+        // External (pre-defined) ids are consulted before local ones
+        ExternalObjectIdHandler extHandler = _config.getExternalObjectIdHandler();
+        if (extHandler != null) {
+            Object ext = extHandler.findExternalObject(key);
+            if (ext != null) {
+                entry.bindExternal(ext);
+            }
+        }
         _objectIds.put(key, entry);
         return entry;
     }

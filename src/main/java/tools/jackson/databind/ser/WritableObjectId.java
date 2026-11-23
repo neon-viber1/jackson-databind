@@ -29,6 +29,14 @@ public final class WritableObjectId
     }
 
     /**
+     * Internal: marks id as externally defined, so that it is only ever written
+     * as a reference. Intentionally not public.
+     */
+    void markExternal() {
+        idWritten = true;
+    }
+
+    /**
      * Check whether a back-reference can be written for this object id.
      * Returns {@code true} if the id has been previously declared (or
      * {@code alwaysAsId} is set) and a reference can be written.
