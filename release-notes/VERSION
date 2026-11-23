@@ -7,6 +7,8 @@ Versions: 3.x (for earlier see VERSION-2.x)
 
 3.4.0 (not yet released)
 
+#3679: CBOR: finite-length maps support on `ObjectMapper`: unfiltered `Map`s
+  now written with `writeStartObject(Object, int)` giving exact entry count
 #6164: `@JsonCreator` on Enum with single `int` parameter fails with
   `ClassCastException` if parameter name matches a getter
   (NOTE: such Creators are now delegating, not properties-based, so they no

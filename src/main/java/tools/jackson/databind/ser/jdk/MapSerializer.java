@@ -555,9 +555,24 @@ public class MapSerializer
     public void serialize(Map<?,?> value, JsonGenerator gen, SerializationContext ctxt)
         throws JacksonException
     {
-        gen.writeStartObject(value);
+        // Size is passed only on the unfiltered path, where the number of entries
+        // written is known to equal `size()`; otherwise use the unsized variant
+        if (_writesAllEntries()) {
+            gen.writeStartObject(value, value.size());
+        } else {
+            gen.writeStartObject(value);
+        }
         serializeWithoutTypeInfo(value, gen, ctxt);
         gen.writeEndObject();
+    }
+
+    /**
+     * Helper method for checking whether every entry of a Map is written as is, that is,
+     * no property filter, value suppression or key inclusion/exclusion rules apply.
+     */
+    private final boolean _writesAllEntries() {
+        return (_filterId == null) && (_suppressableValue == null) && !_suppressNulls
+                && (_inclusionChecker == null);
     }
 
     @Override
