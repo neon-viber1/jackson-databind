@@ -349,6 +349,15 @@ public final class DeserializerCache
             return (ValueDeserializer<Object>) factory.createBuilderBasedDeserializer(
             		ctxt, type, beanDescRef, builder);
         }
+        // `builderMethod` is only meaningful together with `builder`
+        String builderMethod = ctxt.getAnnotationIntrospector().findPOJOBuilderMethod(config,
+                beanDescRef.getClassInfo());
+        if (builderMethod != null) {
+            throw tools.jackson.databind.exc.InvalidDefinitionException.from(ctxt.getParser(),
+                    "Invalid builder method %s.%s(): `@JsonDeserialize.builderMethod` requires `builder` to be specified too"
+                    .formatted(tools.jackson.databind.util.ClassUtil.nameOf(type.getRawClass()), builderMethod),
+                    beanDescRef, null);
+        }
 
         // Or perhaps a Converter?
         Converter<Object,Object> conv = config.findDeserializationConverter(beanDescRef.getClassInfo());
