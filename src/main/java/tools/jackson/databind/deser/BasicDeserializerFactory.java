@@ -959,6 +959,14 @@ public abstract class BasicDeserializerFactory
                 if (deser == null) {
                     ValueInstantiator inst = findValueInstantiator(ctxt, beanDescRef);
                     _assignCreatorViews(ctxt, beanDescRef, inst);
+                    if (mapClass == TreeMap.class) {
+                        HandlerInstantiator hi = config.getHandlerInstantiator();
+                        Comparator<Object> comparator = (hi == null) ? null
+                                : hi.sortedMapComparator(config, type);
+                        if ((comparator != null) && inst.canCreateUsingDefault()) {
+                            inst = new TreeMapInstantiator(inst, comparator);
+                        }
+                    }
                     // 01-May-2016, tatu: Which base type to use here gets tricky, since
                     //   most often it ought to be `Map` or `EnumMap`, but due to abstract
                     //   mapping it will more likely be concrete type like `HashMap`.
@@ -1859,6 +1867,35 @@ public abstract class BasicDeserializerFactory
 
         public static Class<?> findMapFallback(JavaType type) {
             return _mapFallbacks.get(type.getRawClass().getName());
+        }
+    }
+
+    /**
+     * {@link ValueInstantiator} that creates {@link TreeMap}s with a custom
+     * {@link Comparator} when using the default creator.
+     */
+    private static class TreeMapInstantiator extends ValueInstantiator.Delegating
+    {
+        private static final long serialVersionUID = 1L;
+
+        private final Comparator<Object> _comparator;
+
+        TreeMapInstantiator(ValueInstantiator d, Comparator<Object> comparator) {
+            super(d);
+            _comparator = comparator;
+        }
+
+        @Override
+        public ValueInstantiator createContextual(DeserializationContext ctxt,
+                BeanDescription.Supplier beanDescRef)
+        {
+            ValueInstantiator d = _delegate.createContextual(ctxt, beanDescRef);
+            return (d == _delegate) ? this : new TreeMapInstantiator(d, _comparator);
+        }
+
+        @Override
+        public Object createUsingDefault(DeserializationContext ctxt) {
+            return new TreeMap<Object, Object>(_comparator);
         }
     }
 }

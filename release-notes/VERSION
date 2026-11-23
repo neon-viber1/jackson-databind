@@ -7,6 +7,8 @@ Versions: 3.x (for earlier see VERSION-2.x)
 
 3.4.0 (not yet released)
 
+#NNNN: Add `HandlerInstantiator.sortedMapComparator()` to allow supplying
+  a `Comparator` for deserialized `TreeMap` / `SortedMap` / `NavigableMap` values
 #6164: `@JsonCreator` on Enum with single `int` parameter fails with
   `ClassCastException` if parameter name matches a getter
   (NOTE: such Creators are now delegating, not properties-based, so they no
