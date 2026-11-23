@@ -580,6 +580,15 @@ public abstract class BasicDeserializerFactory
             wrapperName = intr.findWrapperName(config, param);
         }
         JavaType type = resolveMemberAndTypeAnnotations(ctxt, param, param.getType());
+        // Opt-in: creator properties required unless explicitly marked, injected,
+        // unwrapped, or of a reference ("Optional-like") type
+        if (config.isEnabled(MapperFeature.CREATOR_PROPERTIES_REQUIRED_BY_DEFAULT)
+                && (name != null) && (injectable == null)
+                && !metadata.isRequired()
+                && !type.isReferenceType()
+                && (intr.findUnwrappingNameTransformer(config, param) == null)) {
+            metadata = metadata.withRequired(Boolean.TRUE);
+        }
         BeanProperty.Std property = new BeanProperty.Std(name, type,
                 wrapperName, param, metadata);
         // Type deserializer: either comes from property (and already resolved)
