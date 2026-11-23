@@ -406,6 +406,7 @@ public class BuilderBasedDeserializer
                 return deserializeWithView(p, ctxt, bean, view);
             }
         }
+        final BitSet seen = _checkRequiredProperties(ctxt) ? new BitSet(_requiredProps.length) : null;
         for (int ix = p.currentNameMatch(_propertyNameMatcher); ; ix = p.nextNameMatch(_propertyNameMatcher)) {
             if (ix >= 0) { // normal case
                 p.nextToken();
@@ -415,9 +416,15 @@ public class BuilderBasedDeserializer
                 } catch (Exception e) {
                     throw wrapAndThrow(e, bean, _failedPropertyName(currentName, _propertiesByIndex[ix]), ctxt);
                 }
+                if (seen != null) {
+                    _markSeen(seen, _propertiesByIndex[ix]);
+                }
                 continue;
             }
             if (ix == PropertyNameMatcher.MATCH_END_OBJECT) {
+                if (seen != null) {
+                    _verifyRequired(ctxt, seen);
+                }
                 return bean;
             }
             if (ix != PropertyNameMatcher.MATCH_UNKNOWN_NAME) {
@@ -463,6 +470,7 @@ public class BuilderBasedDeserializer
         }
 
         final Class<?> activeView = _needViewProcesing ? ctxt.getActiveView() : null;
+        final BitSet seen = _checkRequiredProperties(ctxt) ? new BitSet(_requiredProps.length) : null;
 
         // 04-Jan-2010, tatu: May need to collect unknown properties for polymorphic cases
         TokenBuffer unknown = null;
@@ -506,7 +514,7 @@ public class BuilderBasedDeserializer
                         builder = handleUnknownProperties(ctxt, builder, unknown);
                     }
                     // or just clean?
-                    return _deserialize(p, ctxt, builder);
+                    return _deserialize(p, ctxt, builder, seen);
                 }
                 continue;
             }
@@ -523,6 +531,9 @@ public class BuilderBasedDeserializer
                 }
                 // !!! 21-Nov-2017, tatu: Regular deserializer handles references here...
                 buffer.bufferProperty(prop, prop.deserialize(p, ctxt));
+                if (seen != null) {
+                    _markSeen(seen, prop);
+                }
                 continue;
             }
             // Things marked as ignorable should not be passed to "any"-setter
@@ -554,6 +565,9 @@ public class BuilderBasedDeserializer
         }
 
         // We hit END_OBJECT, so:
+        if (seen != null) {
+            _verifyRequired(ctxt, seen, activeView);
+        }
         Object builder;
         try {
             builder = creator.build(ctxt, buffer, true);
@@ -574,6 +588,15 @@ public class BuilderBasedDeserializer
     protected final Object _deserialize(JsonParser p,
             DeserializationContext ctxt, Object builder) throws JacksonException
     {
+        return _deserialize(p, ctxt, builder, null);
+    }
+
+    /**
+     * @param seen Required properties already seen (buffered), if any
+     */
+    private Object _deserialize(JsonParser p,
+            DeserializationContext ctxt, Object builder, BitSet seen) throws JacksonException
+    {
         if (_injectables != null) {
             injectValues(ctxt, builder);
         }
@@ -591,8 +614,11 @@ public class BuilderBasedDeserializer
         if (_needViewProcesing) {
             Class<?> view = ctxt.getActiveView();
             if (view != null) {
-                return deserializeWithView(p, ctxt, builder, view);
+                return _deserializeWithView(p, ctxt, builder, view, seen);
             }
+        }
+        if ((seen == null) && _checkRequiredProperties(ctxt)) {
+            seen = new BitSet(_requiredProps.length);
         }
         int ix = p.isExpectedStartObjectToken() ?
                 p.nextNameMatch(_propertyNameMatcher) : p.currentNameMatch(_propertyNameMatcher);
@@ -606,9 +632,15 @@ public class BuilderBasedDeserializer
                 } catch (Exception e) {
                     throw wrapAndThrow(e, builder, _failedPropertyName(currentName, prop), ctxt);
                 }
+                if (seen != null) {
+                    _markSeen(seen, prop);
+                }
                 continue;
             }
             if (ix == PropertyNameMatcher.MATCH_END_OBJECT) {
+                if (seen != null) {
+                    _verifyRequired(ctxt, seen);
+                }
                 return builder;
             }
             if (ix != PropertyNameMatcher.MATCH_UNKNOWN_NAME) {
@@ -670,6 +702,16 @@ public class BuilderBasedDeserializer
             Object bean, Class<?> activeView)
         throws JacksonException
     {
+        return _deserializeWithView(p, ctxt, bean, activeView, null);
+    }
+
+    private Object _deserializeWithView(JsonParser p, DeserializationContext ctxt,
+            Object bean, Class<?> activeView, BitSet seen)
+        throws JacksonException
+    {
+        if ((seen == null) && _checkRequiredProperties(ctxt)) {
+            seen = new BitSet(_requiredProps.length);
+        }
         for (int ix = p.currentNameMatch(_propertyNameMatcher); ; ix = p.nextNameMatch(_propertyNameMatcher)) {
             if (ix >= 0) {
                 p.nextToken();
@@ -684,6 +726,9 @@ public class BuilderBasedDeserializer
                 } catch (Exception e) {
                     throw wrapAndThrow(e, bean, _failedPropertyName(currentName, prop), ctxt);
                 }
+                if (seen != null) {
+                    _markSeen(seen, prop);
+                }
                 continue;
             }
             if (ix != PropertyNameMatcher.MATCH_END_OBJECT) {
@@ -693,6 +738,9 @@ public class BuilderBasedDeserializer
                 p.nextToken();
                 handleUnknownVanilla(p, ctxt, bean, p.currentName());
                 continue;
+            }
+            if (seen != null) {
+                _verifyRequired(ctxt, seen, activeView);
             }
             return bean;
         }

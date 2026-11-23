@@ -7,6 +7,10 @@ Versions: 3.x (for earlier see VERSION-2.x)
 
 3.4.0 (not yet released)
 
+#NNNN: Add support for basic "is-required" checks on deserialization of non-Creator
+  properties (including Builder-based) using `@JsonProperty(required=true)`, via new
+  `DeserializationFeature.FAIL_ON_MISSING_REQUIRED_PROPERTIES` (disabled by default)
+ (fix by @user)
 #6164: `@JsonCreator` on Enum with single `int` parameter fails with
   `ClassCastException` if parameter name matches a getter
   (NOTE: such Creators are now delegating, not properties-based, so they no

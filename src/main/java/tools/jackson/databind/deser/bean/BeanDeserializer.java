@@ -729,6 +729,9 @@ public class BeanDeserializer
             if (!p.hasToken(JsonToken.END_OBJECT)) {
                 return _handleUnexpectedWithin(p, ctxt, bean);
             }
+            if (_checkRequiredProperties(ctxt)) {
+                _verifyRequired(ctxt, new BitSet(_requiredProps.length), ctxt.getActiveView());
+            }
             return bean;
         }
         // [databind#631]: Assign current value, to be accessible by custom serializers
@@ -740,6 +743,7 @@ public class BeanDeserializer
                 return deserializeWithView(p, ctxt, bean, view);
             }
         }
+        final BitSet seen = _checkRequiredProperties(ctxt) ? new BitSet(_requiredProps.length) : null;
         for (int ix = p.currentNameMatch(_propNameMatcher); ; ix = p.nextNameMatch(_propNameMatcher)) {
             if (ix >= 0) { // normal case
                 p.nextToken();
@@ -749,9 +753,15 @@ public class BeanDeserializer
                 } catch (Exception e) {
                     throw wrapAndThrow(e, bean, _failedPropertyName(currentName, _propsByIndex[ix]), ctxt);
                 }
+                if (seen != null) {
+                    _markSeen(seen, _propsByIndex[ix]);
+                }
                 continue;
             }
             if (ix == PropertyNameMatcher.MATCH_END_OBJECT) {
+                if (seen != null) {
+                    _verifyRequired(ctxt, seen);
+                }
                 return bean;
             }
             if (ix != PropertyNameMatcher.MATCH_UNKNOWN_NAME) {
@@ -774,6 +784,7 @@ public class BeanDeserializer
     protected Object _deserializeUsingPropertyBased(final JsonParser p, final DeserializationContext ctxt)
         throws JacksonException
     {
+        final BitSet seen = _checkRequiredProperties(ctxt) ? new BitSet(_requiredProps.length) : null;
         final PropertyBasedCreator creator = _propertyBasedCreator;
         PropertyValueBuffer buffer = (_anySetter != null)
             ? creator.startBuildingWithAnySetter(p, ctxt, _objectIdReader, _anySetter, false)
@@ -869,6 +880,9 @@ public class BeanDeserializer
                         TokenBuffer tb = ctxt.bufferForInputBuffering(p);
                         tb.copyCurrentStructure(p);
                         buffer.bufferMergingProperty(prop, tb);
+                        if (seen != null) {
+                            _markSeen(seen, prop);
+                        }
                         continue;
                     }
                     try {
@@ -883,6 +897,9 @@ public class BeanDeserializer
                             referrings = new ArrayList<>();
                         }
                         referrings.add(referring);
+                    }
+                    if (seen != null) {
+                        _markSeen(seen, prop);
                     }
                     continue;
                 }
@@ -933,6 +950,9 @@ public class BeanDeserializer
         }
 
         // We hit END_OBJECT, so:
+        if (seen != null) {
+            _verifyRequired(ctxt, seen, activeView);
+        }
         Object bean;
         try {
             bean = creator.build(ctxt, buffer);
@@ -1117,6 +1137,7 @@ public class BeanDeserializer
             Object bean, Class<?> activeView)
         throws JacksonException
     {
+        final BitSet seen = _checkRequiredProperties(ctxt) ? new BitSet(_requiredProps.length) : null;
         for (int ix = p.currentNameMatch(_propNameMatcher); ; ix = p.nextNameMatch(_propNameMatcher)) {
             if (ix >= 0) {
                 p.nextToken();
@@ -1131,6 +1152,9 @@ public class BeanDeserializer
                 } catch (Exception e) {
                     wrapAndThrow(e, bean, _failedPropertyName(currentName, prop), ctxt);
                 }
+                if (seen != null) {
+                    _markSeen(seen, prop);
+                }
                 continue;
             }
             if (ix != PropertyNameMatcher.MATCH_END_OBJECT) {
@@ -1140,6 +1164,9 @@ public class BeanDeserializer
                 p.nextToken();
                 handleUnknownVanilla(p, ctxt, bean, p.currentName());
                 continue;
+            }
+            if (seen != null) {
+                _verifyRequired(ctxt, seen, activeView);
             }
             return bean;
         }
