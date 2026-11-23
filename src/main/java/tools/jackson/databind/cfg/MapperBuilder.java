@@ -189,6 +189,13 @@ public abstract class MapperBuilder<M extends ObjectMapper,
      */
     protected LinkedNode<DeserializationProblemHandler> _problemHandlers;
 
+    /**
+     * Optional handler for pre-processing String values read.
+     *
+     * @since 3.4
+     */
+    protected ValuePreprocessor _valuePreprocessor;
+
     protected AbstractTypeResolver[] _abstractTypeResolvers;
 
     /*
@@ -327,6 +334,7 @@ public abstract class MapperBuilder<M extends ObjectMapper,
         _deserializationContexts = null;
         _injectableValues = null;
         _problemHandlers = null;
+        _valuePreprocessor = null;
         _abstractTypeResolvers = NO_ABSTRACT_TYPE_RESOLVERS;
 
         _defaultAttributes = null;
@@ -376,6 +384,7 @@ public abstract class MapperBuilder<M extends ObjectMapper,
         _deserializerFactory = state._deserializerFactory;
         _injectableValues = Snapshottable.takeSnapshot(state._injectableValues);
         _problemHandlers = state._problemHandlers;
+        _valuePreprocessor = state._valuePreprocessor;
         _abstractTypeResolvers = state._abstractTypeResolvers;
 
         // Factories/handlers, other
@@ -729,6 +738,10 @@ public abstract class MapperBuilder<M extends ObjectMapper,
 
     public LinkedNode<DeserializationProblemHandler> deserializationProblemHandlers() {
         return _problemHandlers;
+    }
+
+    public ValuePreprocessor valuePreprocessor() {
+        return _valuePreprocessor;
     }
 
     /*
@@ -1508,6 +1521,22 @@ public abstract class MapperBuilder<M extends ObjectMapper,
      */
     public B clearProblemHandlers() {
         _problemHandlers = null;
+        return _this();
+    }
+
+    /**
+     * Method for registering a {@link ValuePreprocessor} that is applied to
+     * all String values read by the mapper (see {@link ValuePreprocessor} for
+     * details); replaces any earlier one. Can be overridden per call using
+     * {@code ObjectReader.with(ValuePreprocessor)} or removed using
+     * {@code ObjectReader.withoutValuePreprocessor()}.
+     *
+     * @param vp Preprocessor to use; {@code null} to remove
+     *
+     * @since 3.4
+     */
+    public B valuePreprocessor(ValuePreprocessor vp) {
+        _valuePreprocessor = vp;
         return _this();
     }
 

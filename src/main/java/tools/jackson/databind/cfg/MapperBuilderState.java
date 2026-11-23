@@ -11,6 +11,7 @@ import tools.jackson.core.util.Snapshottable;
 import tools.jackson.databind.*;
 import tools.jackson.databind.deser.DeserializationProblemHandler;
 import tools.jackson.databind.deser.DeserializerFactory;
+import tools.jackson.databind.deser.ValuePreprocessor;
 import tools.jackson.databind.introspect.ClassIntrospector;
 import tools.jackson.databind.introspect.MixInHandler;
 import tools.jackson.databind.jsontype.SubtypeResolver;
@@ -111,6 +112,8 @@ public abstract class MapperBuilderState
      */
     protected final LinkedNode<DeserializationProblemHandler> _problemHandlers;
 
+    protected final ValuePreprocessor _valuePreprocessor;
+
     protected final AbstractTypeResolver[] _abstractTypeResolvers;
 
     /*
@@ -189,6 +192,7 @@ public abstract class MapperBuilderState
         _injectableValues = Snapshottable.takeSnapshot(src._injectableValues);
         // assume our usage of LinkedNode-based list is immutable here (should be)
         _problemHandlers = src._problemHandlers;
+        _valuePreprocessor = src._valuePreprocessor;
         _abstractTypeResolvers = src._abstractTypeResolvers;
 
         // Other handlers
