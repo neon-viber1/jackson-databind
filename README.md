@@ -580,6 +580,15 @@ static class Builder {
 This will deserialize JSON fields with `known_as`, as well as `identifer` and `first_name` into `name`. Rather than an array of entries, a single alias can be used by specifying a string as such `JsonAlias("identifier")`.  
 Note: to use the `@JsonAlias` annotation, a `@JsonProperty` annotation must also be used.
 
+Note that annotations of the value class (for example on its fields) are not consulted when deserializing through a builder: annotate the builder class instead.
+To avoid duplication, the value class can be registered as a mix-in for the builder class, as long as member names and signatures match:
+
+```java
+ObjectMapper mapper = JsonMapper.builder()
+    .addMixIn(Person.Builder.class, Person.class)
+    .build();
+```
+
 Overall, Jackson library is very powerful in deserializing objects using builder pattern.
 
 ## Tutorial: Collecting multiple errors (3.1+)
