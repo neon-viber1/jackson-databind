@@ -38,6 +38,9 @@ public class LongNode
      */
 
     @Override
+    protected BaseJsonNode _copyForLocation() { return new LongNode(_value); }
+
+    @Override
     public JsonParser.NumberType numberType() { return JsonParser.NumberType.LONG; }
 
     @Override

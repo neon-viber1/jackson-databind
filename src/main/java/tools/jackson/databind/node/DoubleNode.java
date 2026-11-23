@@ -39,6 +39,9 @@ public class DoubleNode
      */
 
     @Override
+    protected BaseJsonNode _copyForLocation() { return new DoubleNode(_value); }
+
+    @Override
     public JsonParser.NumberType numberType() { return JsonParser.NumberType.DOUBLE; }
 
     @Override

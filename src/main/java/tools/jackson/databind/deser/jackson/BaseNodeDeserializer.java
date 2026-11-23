@@ -174,7 +174,8 @@ public abstract class BaseNodeDeserializer<T extends JsonNode>
                                                         final JsonNodeFactory nodeFactory, final ContainerStack stack)
             throws JacksonException
     {
-        final ObjectNode node = nodeFactory.objectNode();
+        final boolean track = ctxt.isEnabled(JsonNodeFeature.TRACK_TOKEN_LOCATIONS);
+        final ObjectNode node = _withLoc(p, track, nodeFactory.objectNode());
         String key = p.currentName();
         for (; key != null; key = p.nextName()) {
             JsonNode value;
@@ -192,7 +193,7 @@ public abstract class BaseNodeDeserializer<T extends JsonNode>
                             stack, nodeFactory.arrayNode());
                     break;
                 default:
-                    value = _deserializeAnyScalar(p, ctxt);
+                    value = _withLoc(p, track, _deserializeAnyScalar(p, ctxt));
             }
             JsonNode old = node.replace(key, value);
             if (old != null) {
@@ -221,6 +222,7 @@ public abstract class BaseNodeDeserializer<T extends JsonNode>
             key = p.currentName();
         }
         final JsonNodeFactory nodeFactory = ctxt.getNodeFactory();
+        final boolean track = ctxt.isEnabled(JsonNodeFeature.TRACK_TOKEN_LOCATIONS);
         for (; key != null; key = p.nextName()) {
             // If not, fall through to regular handling
             JsonToken t = p.nextToken();
@@ -294,9 +296,19 @@ public abstract class BaseNodeDeserializer<T extends JsonNode>
                         key, node, old, value);
             }
             */
-            node.set(key, value);
+            node.set(key, (value instanceof ContainerNode) // already handled
+                    ? value : _withLoc(p, track, value));
         }
         return node;
+    }
+
+    /**
+     * Helper method that, if location tracking is enabled, returns node
+     * with location of the current token of the parser.
+     */
+    @SuppressWarnings("unchecked")
+    protected static <N extends JsonNode> N _withLoc(JsonParser p, boolean track, N node) {
+        return track ? (N) node.withLocation(p.currentTokenLocation()) : node;
     }
 
     // Non-recursive alternative
@@ -304,7 +316,8 @@ public abstract class BaseNodeDeserializer<T extends JsonNode>
                                                                       JsonNodeFactory nodeFactory, ContainerStack stack, final ContainerNode<?> root)
             throws JacksonException
     {
-        ContainerNode<?> curr = root;
+        final boolean track = ctxt.isEnabled(JsonNodeFeature.TRACK_TOKEN_LOCATIONS);
+        ContainerNode<?> curr = _withLoc(p, track, root);
         final int intCoercionFeats = ctxt.getDeserializationFeatures() & F_MASK_INT_COERCIONS;
 
         outer_loop:
@@ -322,7 +335,7 @@ public abstract class BaseNodeDeserializer<T extends JsonNode>
                     switch (t.id()) {
                         case JsonTokenId.ID_START_OBJECT:
                         {
-                            ObjectNode newOb = nodeFactory.objectNode();
+                            ObjectNode newOb = _withLoc(p, track, nodeFactory.objectNode());
                             JsonNode old = currObject.replace(propName, newOb);
                             if (old != null) {
                                 _handleDuplicateProperty(p, ctxt, nodeFactory,
@@ -335,7 +348,7 @@ public abstract class BaseNodeDeserializer<T extends JsonNode>
                         }
                         case JsonTokenId.ID_START_ARRAY:
                         {
-                            ArrayNode newOb = nodeFactory.arrayNode();
+                            ArrayNode newOb = _withLoc(p, track, nodeFactory.arrayNode());
                             JsonNode old = currObject.replace(propName, newOb);
                             if (old != null) {
                                 _handleDuplicateProperty(p, ctxt, nodeFactory,
@@ -370,6 +383,7 @@ public abstract class BaseNodeDeserializer<T extends JsonNode>
                         default:
                             value = _deserializeRareScalar(p, ctxt);
                     }
+                    value = _withLoc(p, track, value);
                     JsonNode old = currObject.replace(propName, value);
                     if (old != null) {
                         _handleDuplicateProperty(p, ctxt, nodeFactory,
@@ -390,36 +404,36 @@ public abstract class BaseNodeDeserializer<T extends JsonNode>
                     switch (t.id()) {
                         case JsonTokenId.ID_START_OBJECT:
                             stack.push(curr);
-                            curr = nodeFactory.objectNode();
+                            curr = _withLoc(p, track, nodeFactory.objectNode());
                             currArray.add(curr);
                             continue outer_loop;
                         case JsonTokenId.ID_START_ARRAY:
                             stack.push(curr);
-                            curr = nodeFactory.arrayNode();
+                            curr = _withLoc(p, track, nodeFactory.arrayNode());
                             currArray.add(curr);
                             continue outer_loop;
                         case JsonTokenId.ID_END_ARRAY:
                             break arrayLoop;
                         case JsonTokenId.ID_STRING:
-                            currArray.add(nodeFactory.stringNode(p.getString()));
+                            currArray.add(_withLoc(p, track, nodeFactory.stringNode(p.getString())));
                             continue arrayLoop;
                         case JsonTokenId.ID_NUMBER_INT:
-                            currArray.add(_fromInt(p, intCoercionFeats, nodeFactory));
+                            currArray.add(_withLoc(p, track, _fromInt(p, intCoercionFeats, nodeFactory)));
                             continue arrayLoop;
                         case JsonTokenId.ID_NUMBER_FLOAT:
-                            currArray.add(_fromFloat(p, ctxt, nodeFactory));
+                            currArray.add(_withLoc(p, track, _fromFloat(p, ctxt, nodeFactory)));
                             continue arrayLoop;
                         case JsonTokenId.ID_TRUE:
-                            currArray.add(nodeFactory.booleanNode(true));
+                            currArray.add(_withLoc(p, track, nodeFactory.booleanNode(true)));
                             continue arrayLoop;
                         case JsonTokenId.ID_FALSE:
-                            currArray.add(nodeFactory.booleanNode(false));
+                            currArray.add(_withLoc(p, track, nodeFactory.booleanNode(false)));
                             continue arrayLoop;
                         case JsonTokenId.ID_NULL:
-                            currArray.add(nodeFactory.nullNode());
+                            currArray.add(_withLoc(p, track, nodeFactory.nullNode()));
                             continue arrayLoop;
                         default:
-                            currArray.add(_deserializeRareScalar(p, ctxt));
+                            currArray.add(_withLoc(p, track, _deserializeRareScalar(p, ctxt)));
                             continue arrayLoop;
                     }
                 }

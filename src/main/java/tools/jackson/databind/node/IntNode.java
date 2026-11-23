@@ -58,6 +58,9 @@ public class IntNode
      */
 
     @Override
+    protected BaseJsonNode _copyForLocation() { return new IntNode(_value); }
+
+    @Override
     public JsonParser.NumberType numberType() { return JsonParser.NumberType.INT; }
 
     @Override

@@ -34,6 +34,10 @@ public abstract class ContainerNode<T extends ContainerNode<T>>
 
     protected ContainerNode() { _nodeFactory = null; } // only for JDK ser
 
+    // Containers are created fresh for each tree, never shared
+    @Override
+    protected BaseJsonNode _copyForLocation() { return this; }
+
     @Override
     public boolean isContainer() {
         return true;

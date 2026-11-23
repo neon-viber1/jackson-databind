@@ -103,7 +103,8 @@ public class JsonNodeDeserializer
             return _deserializeObjectAtName(p, ctxt, nodeF, stack);
         default:
         }
-        return _deserializeAnyScalar(p, ctxt);
+        return _withLoc(p, ctxt.isEnabled(JsonNodeFeature.TRACK_TOKEN_LOCATIONS),
+                _deserializeAnyScalar(p, ctxt));
     }
 
     @Override

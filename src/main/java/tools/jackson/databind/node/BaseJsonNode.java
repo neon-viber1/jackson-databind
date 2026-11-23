@@ -37,6 +37,42 @@ public abstract class BaseJsonNode
     protected final static Optional<Boolean> OPT_FALSE = Optional.of(false);
     protected final static Optional<Boolean> OPT_TRUE = Optional.of(true);
 
+    /**
+     * Location of the token this node was read from, if tracked; {@code null} if not.
+     * Not serialized.
+     *
+     * @since 3.4
+     */
+    protected transient TokenStreamLocation _location;
+
+    @Override
+    public TokenStreamLocation tokenLocation() {
+        return (_location == null) ? TokenStreamLocation.NA : _location;
+    }
+
+    @Override
+    public JsonNode withLocation(TokenStreamLocation loc) {
+        if (loc == null || loc == TokenStreamLocation.NA) {
+            return this;
+        }
+        BaseJsonNode n = _copyForLocation();
+        if (n == null) { // not supported by this node type: stay untracked
+            return this;
+        }
+        n._location = loc;
+        return n;
+    }
+
+    /**
+     * Method called to get a node that can safely be assigned a location: either
+     * a new copy (for scalar nodes that may be shared or cached), or
+     * {@code this} (for container nodes, which are never shared). Default
+     * implementation returns {@code null}, meaning location cannot be assigned.
+     *
+     * @since 3.4
+     */
+    protected BaseJsonNode _copyForLocation() { return null; }
+
     // Simplest way is by using a helper
     @Serial
     Object writeReplace() {

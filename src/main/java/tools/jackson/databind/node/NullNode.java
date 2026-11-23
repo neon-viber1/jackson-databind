@@ -41,6 +41,9 @@ public class NullNode
     @Override public JsonToken asToken() { return JsonToken.VALUE_NULL; }
 
     @Override
+    protected BaseJsonNode _copyForLocation() { return new NullNode(); }
+
+    @Override
     public NullNode deepCopy() { return this; }
 
     /*

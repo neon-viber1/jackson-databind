@@ -108,6 +108,28 @@ public abstract class JsonNode
      */
     public abstract JsonNode deepCopy();
 
+    /**
+     * Accessor for the location of the input token this node was read from, if
+     * known (see {@link tools.jackson.databind.cfg.JsonNodeFeature#TRACK_TOKEN_LOCATIONS}).
+     * Best-effort: returns {@link TokenStreamLocation#NA} if not known, which is the default.
+     * Location is not part of node equality, and is not retained by {@link #deepCopy()}
+     * of container nodes.
+     *
+     * @since 3.4
+     */
+    public TokenStreamLocation tokenLocation() { return TokenStreamLocation.NA; }
+
+    /**
+     * Method for getting a node that has the given location as its {@link #tokenLocation()}.
+     * Never modifies shared (cached or singleton) instances: if this node may be shared,
+     * a new instance is returned. Default implementation returns {@code this}
+     * (no location tracking); {@code null} or {@link TokenStreamLocation#NA} also
+     * return {@code this}.
+     *
+     * @since 3.4
+     */
+    public JsonNode withLocation(TokenStreamLocation loc) { return this; }
+
     /*
     /**********************************************************************
     /* TreeNode implementation

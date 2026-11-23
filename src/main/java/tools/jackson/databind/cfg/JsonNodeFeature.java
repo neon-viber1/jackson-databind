@@ -109,6 +109,27 @@ public enum JsonNodeFeature implements DatatypeFeature
      * @since 3.2
      */
     MAP_ABSENT_TO_MISSING(false),
+
+    /**
+     * Feature that determines whether {@link tools.jackson.databind.JsonNode}s read from
+     * a {@link tools.jackson.core.JsonParser} remember the {@link tools.jackson.core.TokenStreamLocation}
+     * of the token they were created from; if so, location is accessible via
+     * {@link tools.jackson.databind.JsonNode#tokenLocation()} and is reported by
+     * {@link tools.jackson.databind.node.TreeTraversingParser}.
+     *<p>
+     * Tracking is "best-effort": nodes that are not created from a token (for example
+     * ones built programmatically, or binary and POJO nodes) have no location
+     * ({@link tools.jackson.core.TokenStreamLocation#NA}), and whether location is available
+     * at all depends on the underlying parser. Locations are not part of node equality.
+     * Tracking has a memory cost (one reference per node plus a location object), and
+     * for scalar values that are normally shared (like {@code null} and booleans)
+     * a separate node instance is created.
+     *<p>
+     * Default value: {@code false}
+     *
+     * @since 3.4
+     */
+    TRACK_TOKEN_LOCATIONS(false),
     ;
 
     private final static int FEATURE_INDEX = DatatypeFeatures.FEATURE_INDEX_JSON_NODE;
