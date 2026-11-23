@@ -43,6 +43,14 @@ public class RootNameLookup implements java.io.Serializable
             // Should we strip out enclosing class tho? For now, nope:
             name = PropertyName.construct(rootType.getSimpleName());
         }
+        PropertyNamingStrategy pns = ctxt.getConfig().getPropertyNamingStrategy();
+        if (pns != null) {
+            String simple = name.getSimpleName();
+            String renamed = pns.nameForRootValue(ctxt.getConfig(), ac, simple);
+            if (renamed != null && !renamed.equals(simple)) {
+                name = PropertyName.construct(renamed);
+            }
+        }
         _rootNames.put(key, name);
         return name;
     }

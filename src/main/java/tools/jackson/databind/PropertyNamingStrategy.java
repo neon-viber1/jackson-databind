@@ -3,6 +3,7 @@ package tools.jackson.databind;
 import java.io.Serial;
 
 import tools.jackson.databind.cfg.MapperConfig;
+import tools.jackson.databind.introspect.AnnotatedClass;
 import tools.jackson.databind.introspect.AnnotatedField;
 import tools.jackson.databind.introspect.AnnotatedMethod;
 import tools.jackson.databind.introspect.AnnotatedParameter;
@@ -115,6 +116,29 @@ public class PropertyNamingStrategy
      * @param defaultName Default name that would be used for property in absence of custom strategy
      */
     public String nameForConstructorParameter(MapperConfig<?> config, AnnotatedParameter ctorParam,
+            String defaultName)
+    {
+        return defaultName;
+    }
+
+    /**
+     * Method called to find the name of the root-level wrapper used when
+     * {@code SerializationFeature.WRAP_ROOT_VALUE} /
+     * {@code DeserializationFeature.UNWRAP_ROOT_VALUE} are enabled.
+     * The default name is either the explicit {@code @JsonRootName} value (if any) or
+     * the simple name of the class; the same hook is applied to both.
+     * Result is cached per root type.
+     *<p>
+     * Default implementation returns {@code defaultName} as-is; built-in strategies
+     * do not change root names.
+     *
+     * @param config Configuration in used: either <code>SerializationConfig</code>
+     *   or <code>DeserializationConfig</code>, depending on whether method is called
+     *   during serialization or deserialization
+     * @param cls Annotated root value class
+     * @param defaultName Default name that would be used for root value in absence of custom strategy
+     */
+    public String nameForRootValue(MapperConfig<?> config, AnnotatedClass cls,
             String defaultName)
     {
         return defaultName;
