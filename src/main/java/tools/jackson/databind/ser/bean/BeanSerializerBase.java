@@ -744,6 +744,13 @@ public abstract class BeanSerializerBase
             _serializeWithObjectId(bean, gen, ctxt, typeSer);
             return;
         }
+        // [databind#2844]: external type id written for the root value would end up
+        // in the same Object as the bean's own properties; if one has the same name,
+        // use the POJO value and skip the generated type id
+        if (_hasPropertyWithExternalTypeIdName(ctxt, typeSer, bean)) {
+            serialize(bean, gen, ctxt);
+            return;
+        }
         WritableTypeId typeIdDef = _typeIdDef(typeSer, bean, JsonToken.START_OBJECT);
         typeSer.writeTypePrefix(gen, ctxt, typeIdDef);
         gen.assignCurrentValue(bean); // [databind#631]
@@ -754,6 +761,41 @@ public abstract class BeanSerializerBase
             _serializeProperties(bean, gen, ctxt);
         }
         typeSer.writeTypeSuffix(gen, ctxt, typeIdDef);
+    }
+
+    /**
+     * Helper for [databind#2844]: class-level {@code As.EXTERNAL_PROPERTY} is
+     * handled as {@code As.PROPERTY}, and so for a root value the type id would be
+     * written along with bean's own properties. If one of those has the same name,
+     * the POJO value is used and generated type id is skipped.
+     */
+    private boolean _hasPropertyWithExternalTypeIdName(SerializationContext ctxt,
+            TypeSerializer typeSer, Object bean)
+    {
+        if (typeSer.getTypeInclusion() != JsonTypeInfo.As.PROPERTY) {
+            return false;
+        }
+        final String n = typeSer.getPropertyName();
+        if (n == null) {
+            return false;
+        }
+        final PropertyName typePropName = PropertyName.construct(n);
+        boolean clash = false;
+        for (BeanPropertyWriter prop : _props) {
+            if (prop.wouldConflictWithName(typePropName)) {
+                clash = true;
+                break;
+            }
+        }
+        if (!clash) {
+            return false;
+        }
+        // Rare case: only now check whether declared inclusion was external
+        JsonTypeInfo.Value typeInfo = ctxt.getAnnotationIntrospector()
+                .findPolymorphicTypeInfo(ctxt.getConfig(),
+                        ctxt.introspectClassAnnotations(bean.getClass()));
+        return (typeInfo != null)
+                && (typeInfo.getInclusionType() == JsonTypeInfo.As.EXTERNAL_PROPERTY);
     }
 
     protected final void _serializeWithObjectId(Object bean, JsonGenerator g,
