@@ -39,6 +39,9 @@ public class FloatNode
      */
 
     @Override
+    protected BaseJsonNode _copyForLocation() { return new FloatNode(_value); }
+
+    @Override
     public JsonParser.NumberType numberType() { return JsonParser.NumberType.FLOAT; }
 
     @Override

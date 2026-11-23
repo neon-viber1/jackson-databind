@@ -64,6 +64,9 @@ public class BooleanNode
     }
 
     @Override
+    protected BaseJsonNode _copyForLocation() { return new BooleanNode(_value); }
+
+    @Override
     public BooleanNode deepCopy() { return this; }
 
     /*

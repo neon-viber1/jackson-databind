@@ -43,6 +43,9 @@ public class BigIntegerNode
      */
 
     @Override
+    protected BaseJsonNode _copyForLocation() { return new BigIntegerNode(_value); }
+
+    @Override
     public JsonParser.NumberType numberType() { return JsonParser.NumberType.BIG_INTEGER; }
 
     @Override

@@ -71,6 +71,9 @@ public class StringNode
     }
 
     @Override
+    protected BaseJsonNode _copyForLocation() { return new StringNode(_value); }
+
+    @Override
     public StringNode deepCopy() { return this; }
 
     /*

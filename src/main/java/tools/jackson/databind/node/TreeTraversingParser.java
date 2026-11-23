@@ -259,12 +259,34 @@ public class TreeTraversingParser
 
     @Override
     public TokenStreamLocation currentTokenLocation() {
-        return TokenStreamLocation.NA;
+        return _currentNodeLocation();
     }
 
     @Override
     public TokenStreamLocation currentLocation() {
-        return TokenStreamLocation.NA;
+        return _currentNodeLocation();
+    }
+
+    /**
+     * Location of the node that the current token is for, if tracked (see
+     * {@link tools.jackson.databind.cfg.JsonNodeFeature#TRACK_TOKEN_LOCATIONS});
+     * {@link TokenStreamLocation#NA} otherwise. For {@code END_OBJECT} and {@code END_ARRAY}
+     * location is that of the matching container (start); for {@code PROPERTY_NAME}
+     * that of the value of the property.
+     */
+    protected TokenStreamLocation _currentNodeLocation() {
+        NodeCursor crsr = _nodeCursor;
+        if (crsr == null || _currToken == null) {
+            return TokenStreamLocation.NA;
+        }
+        if (_currToken == JsonToken.START_OBJECT || _currToken == JsonToken.START_ARRAY) {
+            crsr = crsr.parentCursor();
+            if (crsr == null) {
+                return TokenStreamLocation.NA;
+            }
+        }
+        JsonNode n = crsr.currentNode();
+        return (n == null) ? TokenStreamLocation.NA : n.tokenLocation();
     }
 
     /*

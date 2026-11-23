@@ -38,6 +38,9 @@ public class ShortNode
      */
 
     @Override
+    protected BaseJsonNode _copyForLocation() { return new ShortNode(_value); }
+
+    @Override
     public JsonParser.NumberType numberType() {
         // No SHORT enum so
         return JsonParser.NumberType.INT;

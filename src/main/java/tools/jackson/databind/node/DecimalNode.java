@@ -44,6 +44,9 @@ public class DecimalNode
      */
 
     @Override
+    protected BaseJsonNode _copyForLocation() { return new DecimalNode(_value); }
+
+    @Override
     public JsonParser.NumberType numberType() { return JsonParser.NumberType.BIG_DECIMAL; }
 
     @Override
