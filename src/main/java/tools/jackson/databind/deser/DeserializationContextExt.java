@@ -11,6 +11,7 @@ import tools.jackson.core.*;
 import tools.jackson.databind.*;
 import tools.jackson.databind.cfg.HandlerInstantiator;
 import tools.jackson.databind.deser.ReadableObjectId.Referring;
+import tools.jackson.databind.deser.impl.PreprocessingParser;
 import tools.jackson.databind.introspect.Annotated;
 import tools.jackson.databind.util.ClassUtil;
 
@@ -341,10 +342,21 @@ public abstract class DeserializationContextExt
     /**********************************************************************
      */
 
-    public Object readRootValue(JsonParser p, JavaType valueType,
+    /**
+     * Helper method that wraps given parser with one that applies configured
+     * {@link ValuePreprocessor}, if any; otherwise returns parser as is.
+     *
+     * @since 3.4
+     */
+    public JsonParser wrapForPreprocessing(JsonParser p) {
+        return PreprocessingParser.wrapIfNeeded(p, _config.getValuePreprocessor());
+    }
+
+    public Object readRootValue(JsonParser p0, JavaType valueType,
             ValueDeserializer<Object> deser, Object valueToUpdate)
         throws JacksonException
     {
+        final JsonParser p = wrapForPreprocessing(p0);
         if (_config.useRootWrapping()) {
             return _unwrapAndDeserialize(p, valueType, deser, valueToUpdate);
         }

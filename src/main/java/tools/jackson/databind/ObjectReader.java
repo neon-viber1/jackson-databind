@@ -19,6 +19,7 @@ import tools.jackson.databind.cfg.DeserializationContexts;
 import tools.jackson.databind.deser.CollectingProblemHandler;
 import tools.jackson.databind.deser.DeserializationContextExt;
 import tools.jackson.databind.deser.DeserializationProblemHandler;
+import tools.jackson.databind.deser.ValuePreprocessor;
 import tools.jackson.databind.exc.CollectedProblem;
 import tools.jackson.databind.exc.DeferredBindingException;
 import tools.jackson.databind.node.ArrayNode;
@@ -693,6 +694,26 @@ public class ObjectReader
 
     public ObjectReader withHandler(DeserializationProblemHandler h) {
         return _with(_config.withHandler(h));
+    }
+
+    /**
+     * Returns a reader that applies given {@link ValuePreprocessor} to String values
+     * read, replacing the one configured for the mapper (if any).
+     *
+     * @since 3.4
+     */
+    public ObjectReader with(ValuePreprocessor vp) {
+        return _with(_config.with(vp));
+    }
+
+    /**
+     * Returns a reader that does not apply any {@link ValuePreprocessor},
+     * even if the mapper has one.
+     *
+     * @since 3.4
+     */
+    public ObjectReader withoutValuePreprocessor() {
+        return _with(_config.withoutValuePreprocessor());
     }
 
     /**

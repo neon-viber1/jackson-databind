@@ -4,6 +4,7 @@ import java.io.Closeable;
 import java.util.*;
 
 import tools.jackson.core.*;
+import tools.jackson.databind.deser.impl.PreprocessingParser;
 
 /**
  * Iterator exposed by {@link ObjectMapper} when binding sequence of
@@ -123,7 +124,9 @@ public class MappingIterator<T> implements Iterator<T>, Closeable
             boolean managedParser, Object valueToUpdate)
     {
         _type = type;
-        _parser = p;
+        // 3.4: apply ValuePreprocessor, if any
+        _parser = (ctxt == null) ? p
+                : PreprocessingParser.wrapIfNeeded(p, ctxt.getConfig().getValuePreprocessor());
         _context = ctxt;
         _deserializer = (ValueDeserializer<T>) deser;
         _closeParser = managedParser;

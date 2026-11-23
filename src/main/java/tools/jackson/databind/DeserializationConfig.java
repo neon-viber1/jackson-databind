@@ -5,6 +5,7 @@ import java.io.Serial;
 import tools.jackson.core.*;
 import tools.jackson.databind.cfg.*;
 import tools.jackson.databind.deser.DeserializationProblemHandler;
+import tools.jackson.databind.deser.ValuePreprocessor;
 import tools.jackson.databind.introspect.*;
 import tools.jackson.databind.jsontype.*;
 import tools.jackson.databind.type.LogicalType;
@@ -65,6 +66,13 @@ public final class DeserializationConfig
     protected final LinkedNode<DeserializationProblemHandler> _problemHandlers;
 
     /**
+     * Optional handler used for pre-processing String values read, if any.
+     *
+     * @since 3.4
+     */
+    protected final ValuePreprocessor _valuePreprocessor;
+
+    /**
      * List of objects that may be able to resolve abstract types to
      * concrete types. Used by functionality like "mr Bean" to materialize
      * types as needed, although may be used for other kinds of defaulting
@@ -100,6 +108,7 @@ public final class DeserializationConfig
         _streamReadFeatures = streamReadFeatures;
         _formatReadFeatures = formatReadFeatures;
         _problemHandlers = b.deserializationProblemHandlers();
+        _valuePreprocessor = b.valuePreprocessor();
         _coercionConfigs = coercionConfigs;
         _abstractTypeResolvers = atrs;
     }
@@ -120,6 +129,7 @@ public final class DeserializationConfig
         _formatReadFeatures = formatReadFeatures;
         _coercionConfigs = src._coercionConfigs;
         _problemHandlers = src._problemHandlers;
+        _valuePreprocessor = src._valuePreprocessor;
         _abstractTypeResolvers = src._abstractTypeResolvers;
     }
 
@@ -131,6 +141,7 @@ public final class DeserializationConfig
         _formatReadFeatures = src._formatReadFeatures;
         _coercionConfigs = src._coercionConfigs;
         _problemHandlers = src._problemHandlers;
+        _valuePreprocessor = src._valuePreprocessor;
         _abstractTypeResolvers = src._abstractTypeResolvers;
     }
 
@@ -144,6 +155,7 @@ public final class DeserializationConfig
         _formatReadFeatures = src._formatReadFeatures;
         _coercionConfigs = src._coercionConfigs;
         _problemHandlers = problemHandlers;
+        _valuePreprocessor = src._valuePreprocessor;
         _abstractTypeResolvers = atr;
     }
 
@@ -152,6 +164,7 @@ public final class DeserializationConfig
         super(src, rootName);
         _deserFeatures = src._deserFeatures;
         _problemHandlers = src._problemHandlers;
+        _valuePreprocessor = src._valuePreprocessor;
         _streamReadFeatures = src._streamReadFeatures;
         _coercionConfigs = src._coercionConfigs;
         _formatReadFeatures = src._formatReadFeatures;
@@ -163,6 +176,7 @@ public final class DeserializationConfig
         super(src, view);
         _deserFeatures = src._deserFeatures;
         _problemHandlers = src._problemHandlers;
+        _valuePreprocessor = src._valuePreprocessor;
         _streamReadFeatures = src._streamReadFeatures;
         _coercionConfigs = src._coercionConfigs;
         _formatReadFeatures = src._formatReadFeatures;
@@ -174,6 +188,7 @@ public final class DeserializationConfig
         super(src, attrs);
         _deserFeatures = src._deserFeatures;
         _problemHandlers = src._problemHandlers;
+        _valuePreprocessor = src._valuePreprocessor;
         _coercionConfigs = src._coercionConfigs;
         _streamReadFeatures = src._streamReadFeatures;
         _formatReadFeatures = src._formatReadFeatures;
@@ -185,6 +200,19 @@ public final class DeserializationConfig
         super(src, dtFeatures);
         _deserFeatures = src._deserFeatures;
         _problemHandlers = src._problemHandlers;
+        _valuePreprocessor = src._valuePreprocessor;
+        _coercionConfigs = src._coercionConfigs;
+        _streamReadFeatures = src._streamReadFeatures;
+        _formatReadFeatures = src._formatReadFeatures;
+        _abstractTypeResolvers = src._abstractTypeResolvers;
+    }
+
+    private DeserializationConfig(DeserializationConfig src, ValuePreprocessor vp)
+    {
+        super(src);
+        _deserFeatures = src._deserFeatures;
+        _problemHandlers = src._problemHandlers;
+        _valuePreprocessor = vp;
         _coercionConfigs = src._coercionConfigs;
         _streamReadFeatures = src._streamReadFeatures;
         _formatReadFeatures = src._formatReadFeatures;
@@ -477,6 +505,36 @@ public final class DeserializationConfig
                 : new DeserializationConfig(this,
                         (LinkedNode<DeserializationProblemHandler>) null,
                         _abstractTypeResolvers);
+    }
+
+    /**
+     * Method for constructing a config that uses given {@link ValuePreprocessor}
+     * (replacing the existing one, if any) for String values read.
+     *
+     * @param vp Preprocessor to use; {@code null} removes preprocessing
+     *
+     * @since 3.4
+     */
+    public DeserializationConfig with(ValuePreprocessor vp) {
+        return (_valuePreprocessor == vp) ? this : new DeserializationConfig(this, vp);
+    }
+
+    /**
+     * Method for removing the configured {@link ValuePreprocessor}, if any.
+     *
+     * @since 3.4
+     */
+    public DeserializationConfig withoutValuePreprocessor() {
+        return with((ValuePreprocessor) null);
+    }
+
+    /**
+     * @return Configured {@link ValuePreprocessor}, if any; {@code null} if none
+     *
+     * @since 3.4
+     */
+    public ValuePreprocessor getValuePreprocessor() {
+        return _valuePreprocessor;
     }
 
     /*

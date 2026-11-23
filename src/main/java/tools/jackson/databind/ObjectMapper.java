@@ -2457,7 +2457,7 @@ public class ObjectMapper
             } else { // pointing to event other than null
                 ValueDeserializer<Object> deser = _findRootDeserializer(readCtxt, toValueType);
                 // note: no handling of unwrapping
-                result = deser.deserialize(p, readCtxt);
+                result = deser.deserialize(readCtxt.wrapForPreprocessing(p), readCtxt);
             }
             return result;
         }
