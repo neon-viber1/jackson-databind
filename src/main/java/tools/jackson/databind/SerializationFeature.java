@@ -344,7 +344,23 @@ public enum SerializationFeature implements ConfigFeature
      * Feature is disabled by default; meaning that strict identity is used, not
      * <code>equals()</code>
      */
-    USE_EQUALITY_FOR_OBJECT_ID(false)
+    USE_EQUALITY_FOR_OBJECT_ID(false),
+
+    /**
+     * Feature that determines whether serializing a non-finite floating-point value
+     * ({@code NaN}, positive or negative infinity) causes a {@link DatabindException}
+     * to be thrown, instead of the value being passed to the generator (which, for JSON,
+     * by default writes it as a quoted String such as <code>"NaN"</code>).
+     *<p>
+     * Applies to {@code float} and {@code double} values (primitive, boxed, in arrays,
+     * and as {@code DoubleNode}/{@code FloatNode} tree nodes); does not affect
+     * {@code long} or other integral values, nor {@code BigDecimal}.
+     * Properties explicitly configured with {@code @JsonFormat(shape = STRING)}
+     * are written as Strings and are not affected.
+     *<p>
+     * Feature is disabled by default.
+     */
+    FAIL_ON_NON_FINITE_NUMBERS(false)
     ;
 
     private final boolean _defaultState;

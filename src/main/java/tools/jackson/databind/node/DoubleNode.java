@@ -9,6 +9,7 @@ import java.util.OptionalDouble;
 import tools.jackson.core.*;
 import tools.jackson.core.io.NumberOutput;
 import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ser.jdk.NumberSerializers;
 
 /**
  * Numeric node that contains 64-bit ("double precision")
@@ -214,6 +215,7 @@ public class DoubleNode
     public final void serialize(JsonGenerator g, SerializationContext provider)
         throws JacksonException
     {
+        NumberSerializers.verifyFinite(provider, _value);
         g.writeNumber(_value);
     }
 
