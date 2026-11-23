@@ -51,6 +51,63 @@ public class RootNameTest
         assertEquals(2, bean2.a);
     }
 
+    @JsonRootName("response")
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class UserProfile {
+        public String name;
+        public String link;
+    }
+
+    @Test
+    public void unwrapSingleRootProperty() throws Exception
+    {
+        UserProfile p = rootMapper().readValue(
+                """
+                {"response":{"name":"User one","link":"Some Link"}}
+                """, UserProfile.class);
+        assertEquals("User one", p.name);
+        assertEquals("Some Link", p.link);
+    }
+
+    @Test
+    public void unwrapWithExtraRootPropertyFails() throws Exception
+    {
+        final ObjectMapper mapper = rootMapper();
+        final String after = """
+                {"response":{"name":"User one","link":"Some Link"},"apiVersion":1.0}
+                """;
+        final String before = """
+                {"apiVersion":1.0,"response":{"name":"User one","link":"Some Link"}}
+                """;
+        MismatchedInputException e = assertThrows(MismatchedInputException.class,
+                () -> mapper.readValue(after, UserProfile.class));
+        verifyException(e, "Current token not `JsonToken.END_OBJECT`");
+        e = assertThrows(MismatchedInputException.class,
+                () -> mapper.readValue(before, UserProfile.class));
+        verifyException(e, "Root name ('apiVersion') does not match expected ('response')");
+    }
+
+    @Test
+    public void unwrapWithWrongRootNameFails() throws Exception
+    {
+        MismatchedInputException e = assertThrows(MismatchedInputException.class,
+                () -> rootMapper().readValue("{\"other\":{\"name\":\"x\"}}", UserProfile.class));
+        verifyException(e, "does not match expected");
+    }
+
+    @Test
+    public void readTreeWorkaroundForMultipleRootProperties() throws Exception
+    {
+        final String json = """
+                {"response":{"name":"User one","link":"Some Link"},"apiVersion":1.0}
+                """;
+        ObjectMapper plain = new JsonMapper();
+        JsonNode root = plain.readTree(json);
+        UserProfile p = plain.treeToValue(root.get("response"), UserProfile.class);
+        assertEquals("User one", p.name);
+        assertEquals("Some Link", p.link);
+    }
+
     @Test
     public void testRootViaMapperFails() throws Exception
     {
