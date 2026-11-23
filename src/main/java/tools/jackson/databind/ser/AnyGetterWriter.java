@@ -17,7 +17,12 @@ import tools.jackson.databind.util.IgnorePropertiesUtil;
 /**
  * Class similar to {@link BeanPropertyWriter}, but that will be used
  * for serializing {@link com.fasterxml.jackson.annotation.JsonAnyGetter} annotated
- * (Map) properties
+ * (Map) properties.
+ *<p>
+ * NOTE: keys returned by an any-getter are not checked against regular properties
+ * (or each other), so a key that matches a regular property is written as a duplicate
+ * entry. Avoiding such collisions is the responsibility of the application; to fail
+ * on duplicates, enable {@link tools.jackson.core.StreamWriteFeature#STRICT_DUPLICATE_DETECTION}.
  */
 public class AnyGetterWriter extends BeanPropertyWriter
 {

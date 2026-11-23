@@ -6,7 +6,9 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.annotation.*;
 
+import tools.jackson.core.JacksonException;
 import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.StreamWriteFeature;
 import tools.jackson.core.json.JsonWriteFeature;
 import tools.jackson.databind.*;
 import tools.jackson.databind.annotation.JsonSerialize;
@@ -908,5 +910,54 @@ public class AnyGetterTest extends DatabindTestUtil
         bean.extra.put("keep", 1);
         bean.extra.put("secret", 2);
         assertEquals(a2q("{'keep':1}"), MAPPER.writeValueAsString(bean));
+    }
+
+    static class CollidingAnyBean {
+        public String getB() { return "false"; }
+
+        @JsonAnyGetter
+        public Map<String, Boolean> getExtra() {
+            Map<String, Boolean> m = new LinkedHashMap<>();
+            m.put("a", true);
+            m.put("b", true);
+            return m;
+        }
+    }
+
+    static class NonCollidingAnyBean {
+        public String getB() { return "false"; }
+
+        @JsonAnyGetter
+        public Map<String, Boolean> getExtra() {
+            return Collections.singletonMap("a", true);
+        }
+    }
+
+    // Collisions are not detected by default: duplicate key is written
+    @Test
+    public void anyGetterDuplicateKeyWrittenByDefault() throws Exception {
+        assertEquals("""
+{"b":"false","a":true,"b":true}""", MAPPER.writeValueAsString(new CollidingAnyBean()));
+    }
+
+    @Test
+    public void anyGetterDuplicateKeyFailsWithStrictDetection() throws Exception {
+        ObjectMapper strict = JsonMapper.builder()
+                .enable(StreamWriteFeature.STRICT_DUPLICATE_DETECTION)
+                .build();
+        Exception e = assertThrows(JacksonException.class,
+                () -> strict.writeValueAsString(new CollidingAnyBean()));
+        assertThat(e.getMessage()).contains("Duplicate Object property \"b\"");
+    }
+
+    @Test
+    public void anyGetterNoCollisionWithStrictDetection() throws Exception {
+        ObjectMapper strict = JsonMapper.builder()
+                .enable(StreamWriteFeature.STRICT_DUPLICATE_DETECTION)
+                .build();
+        String expected = """
+{"b":"false","a":true}""";
+        assertEquals(expected, strict.writeValueAsString(new NonCollidingAnyBean()));
+        assertEquals(expected, MAPPER.writeValueAsString(new NonCollidingAnyBean()));
     }
 }
