@@ -80,8 +80,10 @@ public class NumberSerializer
         } else if (value instanceof Long) {
             g.writeNumber(value.longValue());
         } else if (value instanceof Double) {
+            NumberSerializers.verifyFinite(ctxt, value.doubleValue());
             g.writeNumber(value.doubleValue());
         } else if (value instanceof Float) {
+            NumberSerializers.verifyFinite(ctxt, value.floatValue());
             g.writeNumber(value.floatValue());
         } else if (value instanceof Integer || value instanceof Byte || value instanceof Short) {
             g.writeNumber(value.intValue()); // doesn't need to be cast to smaller numbers

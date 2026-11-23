@@ -660,6 +660,7 @@ public class JDKArraySerializers
                 if (filtered && !_shouldSerializeElement(ctxt, Float.valueOf(value[i]))) {
                     continue;
                 }
+                NumberSerializers.verifyFinite(ctxt, value[i]);
                 g.writeNumber(value[i]);
             }
         }
@@ -764,7 +765,8 @@ public class JDKArraySerializers
                 return;
             }
             // Check if filtering is needed
-            if (_needToCheckFiltering(ctxt)) {
+            if (_needToCheckFiltering(ctxt)
+                    || ctxt.isEnabled(SerializationFeature.FAIL_ON_NON_FINITE_NUMBERS)) {
                 g.writeStartArray(value, len);
                 serializeContents(value, g, ctxt);
                 g.writeEndArray();
@@ -782,6 +784,7 @@ public class JDKArraySerializers
                 if (filtered && !_shouldSerializeElement(ctxt, Double.valueOf(value[i]))) {
                     continue;
                 }
+                NumberSerializers.verifyFinite(ctxt, value[i]);
                 g.writeNumber(value[i]);
             }
         }

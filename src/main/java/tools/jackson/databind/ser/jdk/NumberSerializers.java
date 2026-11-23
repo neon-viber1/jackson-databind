@@ -107,6 +107,21 @@ public class NumberSerializers {
      *************************************************************
      */
 
+    /**
+     * Helper method that fails if {@link SerializationFeature#FAIL_ON_NON_FINITE_NUMBERS}
+     * is enabled and given value is not finite.
+     */
+    public static void verifyFinite(SerializationContext ctxt, double value)
+        throws JacksonException
+    {
+        if (!Double.isFinite(value)
+                && ctxt.isEnabled(SerializationFeature.FAIL_ON_NON_FINITE_NUMBERS)) {
+            ctxt.reportMappingProblem(
+"Non-finite number (%s) cannot be serialized as a JSON number: "
++"disable `SerializationFeature.FAIL_ON_NON_FINITE_NUMBERS` to allow", value);
+        }
+    }
+
     @JacksonStdImpl
     public static class ShortSerializer extends Base<Object> {
         final static ShortSerializer instance = new ShortSerializer();
@@ -195,6 +210,7 @@ public class NumberSerializers {
         @Override
         public void serialize(Object value, JsonGenerator gen,
                 SerializationContext ctxt) throws JacksonException {
+            NumberSerializers.verifyFinite(ctxt, (Float) value);
             gen.writeNumber((Float) value);
         }
     }
@@ -216,6 +232,7 @@ public class NumberSerializers {
         public void serialize(Object value, JsonGenerator gen,
                 SerializationContext ctxt) throws JacksonException
         {
+            NumberSerializers.verifyFinite(ctxt, (Double) value);
             gen.writeNumber((Double) value);
         }
 
@@ -228,6 +245,7 @@ public class NumberSerializers {
             // no type info, just regular serialization
             // 08-Feb-2018, tatu: But as per [databind#2236], NaN values need special care
             Double d = (Double) value;
+            NumberSerializers.verifyFinite(ctxt, d);
             if (NumberOutput.notFinite(d)) {
                 WritableTypeId typeIdDef = typeSer.writeTypePrefix(g, ctxt,
                 // whether to indicate it's number or string is arbitrary; important it is scalar
