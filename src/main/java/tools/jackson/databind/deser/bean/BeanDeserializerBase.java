@@ -110,6 +110,15 @@ public abstract class BeanDeserializerBase
      */
     protected boolean _vanillaProcessing;
 
+    /**
+     * Non-Creator properties that are marked as required, if any (otherwise null):
+     * checked (per call, if {@link DeserializationFeature#FAIL_ON_MISSING_REQUIRED_PROPERTIES}
+     * is enabled) after the Object has been read. Assigned in {@link #resolve}.
+     *
+     * @since 3.4
+     */
+    protected SettableBeanProperty[] _requiredProps;
+
     /*
     /**********************************************************************
     /* Property information, setters
@@ -333,6 +342,7 @@ public abstract class BeanDeserializerBase
         _serializationShape = src._serializationShape;
 
         _vanillaProcessing = src._vanillaProcessing;
+        _requiredProps = src._requiredProps;
 
         _externalTypeIdHandler = src._externalTypeIdHandler;
     }
@@ -372,6 +382,7 @@ public abstract class BeanDeserializerBase
 
         // probably adds a twist, so:
         _vanillaProcessing = false;
+        _requiredProps = _retainRequired(src._requiredProps, renamedProperties);
 
         _externalTypeIdHandler = src._externalTypeIdHandler;
     }
@@ -400,6 +411,8 @@ public abstract class BeanDeserializerBase
 
         // then actual changes:
         _objectIdReader = oir;
+        // (Object Id property itself is never reported as missing)
+        _requiredProps = src._requiredProps;
 
         if (oir == null) {
             _beanProperties = src._beanProperties;
@@ -453,6 +466,7 @@ public abstract class BeanDeserializerBase
         // 01-May-2016, tatu: [databind#1217]: Remove properties from mapping,
         //    to avoid them being deserialized
         _beanProperties = src._beanProperties.withoutProperties(ignorableProps, includableProps);
+        _requiredProps = _retainRequired(src._requiredProps, _beanProperties);
 
         _externalTypeIdHandler = src._externalTypeIdHandler;
     }
@@ -468,6 +482,7 @@ public abstract class BeanDeserializerBase
         _propertyBasedCreator = src._propertyBasedCreator;
 
         _beanProperties = beanProps;
+        _requiredProps = _retainRequired(src._requiredProps, beanProps);
         _backRefs = src._backRefs;
         _ignorableProps = src._ignorableProps;
         _ignoreAllUnknown = src._ignoreAllUnknown;
@@ -722,6 +737,128 @@ public abstract class BeanDeserializerBase
         }
         // may need to disable vanilla processing, if unwrapped handling was enabled...
         _vanillaProcessing = _vanillaProcessing && !_nonStandardCreation;
+
+        _requiredProps = _findRequired(_beanProperties, creatorProps);
+    }
+
+    private static SettableBeanProperty[] _findRequired(BeanPropertyMap props,
+            SettableBeanProperty[] creatorProps)
+    {
+        List<SettableBeanProperty> req = null;
+        for (SettableBeanProperty prop : props) {
+            if (!prop.isRequired() || (prop instanceof ObjectIdValueProperty)
+                    || (prop instanceof ObjectIdReferenceProperty)) {
+                continue;
+            }
+            // Creator properties have their own handling
+            boolean creator = false;
+            if (creatorProps != null) {
+                for (SettableBeanProperty cp : creatorProps) {
+                    if (cp.getName().equals(prop.getName())) {
+                        creator = true;
+                        break;
+                    }
+                }
+            }
+            if (!creator && !(prop instanceof CreatorProperty)) {
+                if (req == null) {
+                    req = new ArrayList<>();
+                }
+                req.add(prop);
+            }
+        }
+        return (req == null) ? null : req.toArray(new SettableBeanProperty[0]);
+    }
+
+    private static SettableBeanProperty[] _retainRequired(SettableBeanProperty[] required,
+            BeanPropertyMap props)
+    {
+        if (required == null) {
+            return null;
+        }
+        List<SettableBeanProperty> req = new ArrayList<>();
+        for (SettableBeanProperty prop : required) {
+            SettableBeanProperty p2 = props.findDefinition(prop.getName());
+            if (p2 != null) {
+                req.add(p2);
+            }
+        }
+        return req.isEmpty() ? null : req.toArray(new SettableBeanProperty[0]);
+    }
+
+    /**
+     * @return True if required non-Creator properties exist and need to be checked
+     *    for this call
+     *
+     * @since 3.4
+     */
+    protected final boolean _checkRequiredProperties(DeserializationContext ctxt) {
+        return (_requiredProps != null)
+                && ctxt.isEnabled(DeserializationFeature.FAIL_ON_MISSING_REQUIRED_PROPERTIES);
+    }
+
+    /**
+     * Method to call when {@code prop} has been successfully read, to record it
+     * in per-call {@code seen} state.
+     *
+     * @since 3.4
+     */
+    protected final void _markSeen(BitSet seen, SettableBeanProperty prop) {
+        if (prop.isRequired()) {
+            final String name = prop.getName();
+            for (int i = 0; i < _requiredProps.length; ++i) {
+                if (_requiredProps[i].getName().equals(name)) {
+                    seen.set(i);
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * Method called after all properties have been read, to verify that all required
+     * ones were included in input.
+     *
+     * @since 3.4
+     */
+    protected final void _verifyRequired(DeserializationContext ctxt, BitSet seen)
+        throws JacksonException
+    {
+        _verifyRequired(ctxt, seen, null);
+    }
+
+    /**
+     * Variant that considers properties not visible in given active view (if any)
+     * as not required.
+     *
+     * @since 3.4
+     */
+    protected final void _verifyRequired(DeserializationContext ctxt, BitSet seen,
+            Class<?> activeView)
+        throws JacksonException
+    {
+        if (activeView != null) {
+            for (int i = 0; i < _requiredProps.length; ++i) {
+                if (!_requiredProps[i].visibleInView(activeView)) {
+                    seen.set(i);
+                }
+            }
+        }
+        if (seen.cardinality() == _requiredProps.length) {
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        int count = 0;
+        for (int i = 0; i < _requiredProps.length; ++i) {
+            if (!seen.get(i)) {
+                if (count++ > 0) {
+                    sb.append(", ");
+                }
+                sb.append('\'').append(_requiredProps[i].getName()).append('\'');
+            }
+        }
+        ctxt.reportInputMismatch(this, "Missing required property(ies) %s for type %s",
+                sb, ClassUtil.getTypeDescription(_beanType));
     }
 
     protected void _replaceProperty(BeanPropertyMap props, SettableBeanProperty[] creatorProps,
@@ -1343,7 +1480,8 @@ ClassUtil.getTypeDescription(ct));
      */
     protected final boolean _useVanillaProcessing(DeserializationContext ctxt) {
         return _vanillaProcessing
-                && (!_needViewProcesing || (ctxt.getActiveView() == null));
+                && (!_needViewProcesing || (ctxt.getActiveView() == null))
+                && !_checkRequiredProperties(ctxt);
     }
 
     @Override

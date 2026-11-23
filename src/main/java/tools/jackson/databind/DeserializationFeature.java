@@ -248,6 +248,28 @@ public enum DeserializationFeature implements ConfigFeature
     FAIL_ON_MISSING_CREATOR_PROPERTIES(false),
 
     /**
+     * Feature that determines what happens when a non-Creator property (one set
+     * using a setter or a field, including properties of Builder classes) that is
+     * marked as required (usually with <code>@JsonProperty(required = true)</code>)
+     * is missing from JSON input. If enabled, a {@link tools.jackson.databind.exc.MismatchedInputException}
+     * is thrown listing the missing properties; if disabled, such properties are
+     * simply left unset.
+     *<p>
+     * A property with explicit JSON <code>null</code> value counts as present.
+     * Required Creator properties are not affected by this feature, but handled
+     * as per {@link #FAIL_ON_MISSING_CREATOR_PROPERTIES} and the required status of the property.
+     * Checks are performed for regular bean and Builder deserialization, including
+     * properties bound when a property-based Creator is used and when JSON Views are used;
+     * they are not (yet) performed for types using <code>@JsonUnwrapped</code> or
+     * external type ids.
+     *<p>
+     * Feature is disabled by default for backwards compatibility.
+     *
+     * @since 3.4
+     */
+    FAIL_ON_MISSING_REQUIRED_PROPERTIES(false),
+
+    /**
       * Feature that determines what happens if one or more Creator properties (properties
       * bound to parameters of Creator method (constructor or static factory method))
       * are bound to null values - either from the JSON or as a default value. This
