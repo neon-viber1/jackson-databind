@@ -219,6 +219,13 @@ public abstract class MapperConfig<T extends MapperConfig<T>>
         return _base.getAccessorNaming();
     }
 
+    /**
+     * @since 3.4
+     */
+    public final tools.jackson.databind.util.ExternalObjectIdHandler getExternalObjectIdHandler() {
+        return _base.getExternalObjectIdHandler();
+    }
+
     public final HandlerInstantiator getHandlerInstantiator() {
         return _base.getHandlerInstantiator();
     }

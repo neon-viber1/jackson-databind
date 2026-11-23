@@ -166,6 +166,12 @@ public class ModuleContextBase
         return this;
     }
 
+    @Override
+    public SetupContext setExternalObjectIdHandler(tools.jackson.databind.util.ExternalObjectIdHandler handler) {
+        _builder.externalObjectIdHandler(handler);
+        return this;
+    }
+
     /*
     /**********************************************************************
     /* Mutators for adding serializers, related

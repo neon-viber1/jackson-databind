@@ -13,6 +13,7 @@ import tools.jackson.databind.jsontype.PolymorphicTypeValidator;
 import tools.jackson.databind.jsontype.TypeResolverBuilder;
 import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.util.StdDateFormat;
+import tools.jackson.databind.util.ExternalObjectIdHandler;
 
 /**
  * Immutable container class used to store simple configuration
@@ -136,6 +137,13 @@ public final class BaseSettings
      * Handler that specifies some aspects of Constructor auto-detection.
      */
     protected final ConstructorDetector _ctorDetector;
+
+    /**
+     * Handler that supplies pre-defined (external) Object Ids, if any.
+     *
+     * @since 3.4
+     */
+    protected final ExternalObjectIdHandler _externalObjectIdHandler;
     
     /*
     /**********************************************************************
@@ -150,7 +158,8 @@ public final class BaseSettings
             DateFormat dateFormat, HandlerInstantiator hi,
             Locale locale, TimeZone tz, Base64Variant defaultBase64,
             CacheProvider cacheProvider, JsonNodeFactory nodeFactory,
-            ConstructorDetector ctorDetector)
+            ConstructorDetector ctorDetector,
+            ExternalObjectIdHandler externalObjectIdHandler)
     {
         _annotationIntrospector = ai;
         _propertyNamingStrategy = pns;
@@ -166,6 +175,7 @@ public final class BaseSettings
         _cacheProvider = cacheProvider;
         _nodeFactory = nodeFactory;
         _ctorDetector = ctorDetector;
+        _externalObjectIdHandler = externalObjectIdHandler;
     }
 
     /*
@@ -180,7 +190,7 @@ public final class BaseSettings
         }
         return new BaseSettings(ai, _propertyNamingStrategy, _enumNamingStrategy, _accessorNaming,
                 _defaultTyper, _typeValidator, _dateFormat, _handlerInstantiator, _locale,
-                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector);
+                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector, _externalObjectIdHandler);
     }
 
     public BaseSettings withInsertedAnnotationIntrospector(AnnotationIntrospector ai) {
@@ -197,7 +207,7 @@ public final class BaseSettings
         }
         return new BaseSettings(_annotationIntrospector, pns, _enumNamingStrategy, _accessorNaming,
                 _defaultTyper, _typeValidator, _dateFormat, _handlerInstantiator, _locale,
-                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector);
+                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector, _externalObjectIdHandler);
     }
 
     public BaseSettings with(EnumNamingStrategy ens) {
@@ -206,7 +216,7 @@ public final class BaseSettings
         }
         return new BaseSettings(_annotationIntrospector, _propertyNamingStrategy, ens, _accessorNaming,
                 _defaultTyper, _typeValidator, _dateFormat, _handlerInstantiator, _locale,
-                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector);
+                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector, _externalObjectIdHandler);
     }
 
     public BaseSettings with(AccessorNamingStrategy.Provider p) {
@@ -215,7 +225,7 @@ public final class BaseSettings
         }
         return new BaseSettings(_annotationIntrospector, _propertyNamingStrategy, _enumNamingStrategy, p,
                 _defaultTyper, _typeValidator, _dateFormat, _handlerInstantiator, _locale,
-                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector);
+                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector, _externalObjectIdHandler);
     }
 
     public BaseSettings with(TypeResolverBuilder<?> typer) {
@@ -225,7 +235,7 @@ public final class BaseSettings
         return new BaseSettings(_annotationIntrospector, _propertyNamingStrategy, _enumNamingStrategy,
                 _accessorNaming,
                 typer, _typeValidator, _dateFormat, _handlerInstantiator, _locale,
-                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector);
+                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector, _externalObjectIdHandler);
     }
 
     public BaseSettings with(PolymorphicTypeValidator ptv) {
@@ -235,7 +245,7 @@ public final class BaseSettings
         return new BaseSettings(_annotationIntrospector, _propertyNamingStrategy, _enumNamingStrategy,
                 _accessorNaming,
                 _defaultTyper, ptv, _dateFormat, _handlerInstantiator, _locale,
-                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector);
+                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector, _externalObjectIdHandler);
     }
 
     public BaseSettings with(DateFormat df) {
@@ -250,7 +260,7 @@ public final class BaseSettings
         return new BaseSettings(_annotationIntrospector, _propertyNamingStrategy, _enumNamingStrategy,
                 _accessorNaming,
                 _defaultTyper, _typeValidator, df, _handlerInstantiator, _locale,
-                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector);
+                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector, _externalObjectIdHandler);
     }
 
     public BaseSettings with(HandlerInstantiator hi) {
@@ -260,7 +270,20 @@ public final class BaseSettings
         return new BaseSettings(_annotationIntrospector, _propertyNamingStrategy, _enumNamingStrategy,
                 _accessorNaming,
                 _defaultTyper, _typeValidator, _dateFormat, hi, _locale,
-                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector);
+                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector, _externalObjectIdHandler);
+    }
+
+    /**
+     * @since 3.4
+     */
+    public BaseSettings with(ExternalObjectIdHandler h) {
+        if (_externalObjectIdHandler == h) {
+            return this;
+        }
+        return new BaseSettings(_annotationIntrospector, _propertyNamingStrategy, _enumNamingStrategy,
+                _accessorNaming,
+                _defaultTyper, _typeValidator, _dateFormat, _handlerInstantiator, _locale,
+                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector, h);
     }
 
     public BaseSettings with(Locale l) {
@@ -270,7 +293,7 @@ public final class BaseSettings
         return new BaseSettings(_annotationIntrospector, _propertyNamingStrategy, _enumNamingStrategy,
                 _accessorNaming,
                 _defaultTyper, _typeValidator, _dateFormat, _handlerInstantiator, l,
-                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector);
+                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector, _externalObjectIdHandler);
     }
 
     /**
@@ -287,7 +310,7 @@ public final class BaseSettings
         return new BaseSettings(_annotationIntrospector, _propertyNamingStrategy, _enumNamingStrategy,
                 _accessorNaming,
                 _defaultTyper, _typeValidator, df, _handlerInstantiator, _locale,
-                tz, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector);
+                tz, _defaultBase64, _cacheProvider, _nodeFactory, _ctorDetector, _externalObjectIdHandler);
     }
 
     public BaseSettings with(Base64Variant base64) {
@@ -297,7 +320,7 @@ public final class BaseSettings
         return new BaseSettings(_annotationIntrospector, _propertyNamingStrategy, _enumNamingStrategy,
                 _accessorNaming,
                 _defaultTyper, _typeValidator, _dateFormat, _handlerInstantiator, _locale,
-                _timeZone, base64, _cacheProvider, _nodeFactory, _ctorDetector);
+                _timeZone, base64, _cacheProvider, _nodeFactory, _ctorDetector, _externalObjectIdHandler);
     }
 
     /**
@@ -312,7 +335,7 @@ public final class BaseSettings
         return new BaseSettings(_annotationIntrospector, _propertyNamingStrategy, _enumNamingStrategy,
                 _accessorNaming,
                 _defaultTyper, _typeValidator, _dateFormat, _handlerInstantiator, _locale,
-                _timeZone, _defaultBase64, cacheProvider, _nodeFactory, _ctorDetector);
+                _timeZone, _defaultBase64, cacheProvider, _nodeFactory, _ctorDetector, _externalObjectIdHandler);
     }
 
     public BaseSettings with(JsonNodeFactory nodeFactory) {
@@ -322,7 +345,7 @@ public final class BaseSettings
         return new BaseSettings(_annotationIntrospector, _propertyNamingStrategy, _enumNamingStrategy,
                 _accessorNaming,
                 _defaultTyper, _typeValidator, _dateFormat, _handlerInstantiator, _locale,
-                _timeZone, _defaultBase64, _cacheProvider, nodeFactory, _ctorDetector);
+                _timeZone, _defaultBase64, _cacheProvider, nodeFactory, _ctorDetector, _externalObjectIdHandler);
     }
 
     public BaseSettings with(ConstructorDetector ctorDetector) {
@@ -332,7 +355,7 @@ public final class BaseSettings
         return new BaseSettings(_annotationIntrospector, _propertyNamingStrategy, _enumNamingStrategy,
                 _accessorNaming,
                 _defaultTyper, _typeValidator, _dateFormat, _handlerInstantiator, _locale,
-                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, ctorDetector);
+                _timeZone, _defaultBase64, _cacheProvider, _nodeFactory, ctorDetector, _externalObjectIdHandler);
     }
 
     /*
@@ -401,6 +424,13 @@ public final class BaseSettings
 
     public JsonNodeFactory getNodeFactory() {
         return _nodeFactory;
+    }
+
+    /**
+     * @since 3.4
+     */
+    public ExternalObjectIdHandler getExternalObjectIdHandler() {
+        return _externalObjectIdHandler;
     }
 
     public ConstructorDetector getConstructorDetector() {

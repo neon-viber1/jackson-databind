@@ -10,6 +10,7 @@ import tools.jackson.core.TokenStreamFactory;
 import tools.jackson.databind.*;
 import tools.jackson.databind.cfg.GeneratorSettings;
 import tools.jackson.databind.cfg.HandlerInstantiator;
+import tools.jackson.databind.util.ExternalObjectIdHandler;
 import tools.jackson.databind.introspect.Annotated;
 import tools.jackson.databind.introspect.BeanPropertyDefinition;
 import tools.jackson.databind.jsonFormatVisitors.JsonFormatVisitorWrapper;
@@ -241,6 +242,16 @@ public class SerializationContextExt
             _objectIdGenerators.add(generator);
         }
         WritableObjectId oid = new WritableObjectId(generator);
+        // External (pre-defined) ids are consulted before local generation: such
+        // objects are only ever written as references
+        ExternalObjectIdHandler extHandler = _config.getExternalObjectIdHandler();
+        if (extHandler != null) {
+            Object extId = extHandler.findExternalId(forPojo, generatorType);
+            if (extId != null) {
+                oid.id = extId;
+                oid.markExternal();
+            }
+        }
         _seenObjectIds.put(forPojo, oid);
         return oid;
     }

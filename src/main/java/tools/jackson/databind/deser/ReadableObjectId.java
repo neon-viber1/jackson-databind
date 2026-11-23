@@ -65,6 +65,14 @@ public class ReadableObjectId
         _key = key;
     }
 
+    /**
+     * Internal: binds externally supplied item, without going through resolver.
+     */
+    void bindExternal(Object item) {
+        _item = item;
+        _itemReplaced = true;
+    }
+
     public void setResolver(ObjectIdResolver resolver) {
         _resolver = resolver;
     }

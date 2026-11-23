@@ -27,6 +27,7 @@ import tools.jackson.databind.ser.*;
 import tools.jackson.databind.type.LogicalType;
 import tools.jackson.databind.type.TypeFactory;
 import tools.jackson.databind.type.TypeModifier;
+import tools.jackson.databind.util.ExternalObjectIdHandler;
 import tools.jackson.databind.util.ArrayBuilders;
 import tools.jackson.databind.util.LinkedNode;
 import tools.jackson.databind.util.RootNameLookup;
@@ -64,7 +65,8 @@ public abstract class MapperBuilder<M extends ObjectMapper,
             Base64Variants.getDefaultVariant(),
             DefaultCacheProvider.defaultInstance(),
             JsonNodeFactory.instance,
-            null // ConstructorDetector
+            null, // ConstructorDetector
+            null // ExternalObjectIdHandler
     );
 
     protected final static TypeResolverProvider DEFAULT_TYPE_RESOLVER_PROVIDER = new TypeResolverProvider();
@@ -1354,6 +1356,22 @@ public abstract class MapperBuilder<M extends ObjectMapper,
      */
     public B handlerInstantiator(HandlerInstantiator hi) {
         _baseSettings = _baseSettings.with(hi);
+        return _this();
+    }
+
+    /**
+     * Method for registering the single {@link ExternalObjectIdHandler} used to supply
+     * pre-defined Object Ids on both serialization and deserialization.
+     * Handler is consulted before the per-call Object Id tables.
+     *
+     * @param h Handler to use; {@code null} to remove
+     *
+     * @return Builder instance itself to allow chaining
+     *
+     * @since 3.4
+     */
+    public B externalObjectIdHandler(ExternalObjectIdHandler h) {
+        _baseSettings = _baseSettings.with(h);
         return _this();
     }
 

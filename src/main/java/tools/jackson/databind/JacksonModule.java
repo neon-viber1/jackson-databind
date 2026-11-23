@@ -239,6 +239,16 @@ public abstract class JacksonModule
          */
         public SetupContext addValueInstantiators(ValueInstantiators instantiators);
 
+        /**
+         * Method that module can use to register the single handler that supplies
+         * pre-defined (external) Object Ids; replaces any earlier registration.
+         *
+         * @param handler Handler to register
+         *
+         * @since 3.4
+         */
+        public SetupContext setExternalObjectIdHandler(tools.jackson.databind.util.ExternalObjectIdHandler handler);
+
         /*
         /******************************************************************
         /* Handler registration; serializers, related
