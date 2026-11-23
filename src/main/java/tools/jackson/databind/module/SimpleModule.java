@@ -326,6 +326,15 @@ public class SimpleModule
     }
 
     /**
+     * Method for registering a serializer used for writing {@link java.util.Map} keys of given type.
+     *<p>
+     * Note that there is no dedicated "key serializer" base class: a key serializer is
+     * a regular {@link ValueSerializer} that writes the key using
+     * {@link tools.jackson.core.JsonGenerator#writeName(String)} (instead of writing a value).
+     * This differs from key deserialization, which has its own
+     * {@link tools.jackson.databind.KeyDeserializer} since it operates on Strings
+     * instead of token streams.
+     *<p>
      * NOTE: This method registers "default" (de)serializers only. See a note on precedence in class JavaDoc.
      */
     public <T> SimpleModule addKeySerializer(Class<? extends T> type, ValueSerializer<T> ser)
