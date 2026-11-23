@@ -7,6 +7,10 @@ Versions: 3.x (for earlier see VERSION-2.x)
 
 3.4.0 (not yet released)
 
+#NNNN: Add `MapperFeature.CREATOR_PROPERTIES_REQUIRED_BY_DEFAULT` to make
+  properties-based Creator parameters (including Record components) required
+  unless of reference type like `Optional`
+  (NOTE: explicit `@JsonProperty(required = false)` cannot opt out)
 #6164: `@JsonCreator` on Enum with single `int` parameter fails with
   `ClassCastException` if parameter name matches a getter
   (NOTE: such Creators are now delegating, not properties-based, so they no

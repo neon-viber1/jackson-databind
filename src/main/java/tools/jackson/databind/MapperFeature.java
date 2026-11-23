@@ -116,6 +116,36 @@ public enum MapperFeature
     INFER_CREATOR_FROM_CONSTRUCTOR_PROPERTIES(true),
 
     /**
+     * Feature that determines whether parameters of properties-based Creators
+     * (constructors, including Record canonical constructors, and factory methods)
+     * are considered required by default, as if each had
+     * {@code @JsonProperty(required = true)}: if so, a missing property results in
+     * a {@code MismatchedInputException}.
+     *<p>
+     * Limitations:
+     *<ul>
+     * <li>Only properties-based Creator parameters are affected; delegating Creators,
+     *   setters and fields, injected and unwrapped parameters are not.
+     *  </li>
+     * <li>Parameters of reference types (like {@code Optional}, {@code AtomicReference})
+     *   remain optional.
+     *  </li>
+     * <li>Only <b>missing</b> properties fail; explicit {@code null} values are still
+     *   allowed (see {@code DeserializationFeature.FAIL_ON_NULL_CREATOR_PROPERTIES}).
+     *  </li>
+     * <li>Since {@code @JsonProperty.required} is a plain boolean, explicit
+     *   {@code required = false} cannot be distinguished from the default and so
+     *   cannot be used to opt out.
+     *  </li>
+     *</ul>
+     *<p>
+     * Feature is disabled by default.
+     *
+     * @since 3.4
+     */
+    CREATOR_PROPERTIES_REQUIRED_BY_DEFAULT(false),
+
+    /**
      * Feature that when enabled will allow getters with is-Prefix also for
      * non-boolean return types; if disabled only methods that return
      * {@code boolean} or {@code Boolean} qualify as "is getters".
