@@ -404,6 +404,15 @@ public enum DeserializationFeature implements ConfigFeature
      * {@link DatabindException} is thrown; otherwise value of the wrapped property
      * will be deserialized as if it was the root value.
      * <p>
+     * NOTE: the root JSON Object must contain <b>exactly one</b> property, with
+     * the expected root name (from {@code @JsonRootName}, or simple class name).
+     * Additional sibling properties, whether before or after the wrapped one, are
+     * not skipped (not even with {@code @JsonIgnoreProperties(ignoreUnknown = true)},
+     * which only applies to the wrapped value) and cause a
+     * {@link DatabindException}. For documents with multiple root-level properties
+     * read them as a tree ({@code readTree()}) and convert the named child
+     * with {@code treeToValue()} instead.
+     * <p>
      * Feature is disabled by default.
      */
     UNWRAP_ROOT_VALUE(false),
