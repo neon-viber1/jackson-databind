@@ -3,6 +3,8 @@ package tools.jackson.databind.cfg;
 import com.fasterxml.jackson.annotation.ObjectIdGenerator;
 import com.fasterxml.jackson.annotation.ObjectIdResolver;
 
+import java.util.Comparator;
+
 import tools.jackson.databind.*;
 import tools.jackson.databind.deser.ValueInstantiator;
 import tools.jackson.databind.introspect.Annotated;
@@ -116,6 +118,28 @@ public abstract class HandlerInstantiator
         return null;
     }
 
+
+    /**
+     * Method called when constructing a deserializer for {@link java.util.TreeMap}
+     * (including declared types {@link java.util.SortedMap} and
+     * {@link java.util.NavigableMap} that are mapped to it) to allow
+     * supplying a {@link Comparator} used for ordering keys of deserialized Maps.
+     * Not called for subclasses of {@code TreeMap}.
+     *<p>
+     * Default implementation returns {@code null}, meaning that natural ordering
+     * of keys is used.
+     *
+     * @param config Deserialization configuration in use
+     * @param mapType Type of Map being deserialized
+     *
+     * @return Comparator to use, if any; {@code null} for natural ordering
+     *
+     * @since 3.4
+     */
+    public Comparator<Object> sortedMapComparator(DeserializationConfig config,
+            JavaType mapType) {
+        return null;
+    }
 
     /**
      * Method called to construct a ObjectIdHandler instance of specified type.
