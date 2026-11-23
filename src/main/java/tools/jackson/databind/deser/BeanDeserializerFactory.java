@@ -5,6 +5,10 @@ import java.util.*;
 
 import com.fasterxml.jackson.annotation.*;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+
 import tools.jackson.databind.*;
 import tools.jackson.databind.annotation.JsonPOJOBuilder;
 import tools.jackson.databind.cfg.DeserializerFactoryConfig;
@@ -335,7 +339,14 @@ public class BeanDeserializerFactory
         // Creators, anyone? (to create builder itself)
         ValueInstantiator valueInstantiator;
         try {
-            valueInstantiator = findValueInstantiator(ctxt, builderDescRef);
+            final String builderMethodName = ctxt.getAnnotationIntrospector()
+                    .findPOJOBuilderMethod(ctxt.getConfig(), valueBeanDescRef.getClassInfo());
+            if (builderMethodName != null) {
+                valueInstantiator = _builderMethodInstantiator(ctxt, valueBeanDescRef,
+                        builderDescRef.getBeanClass(), builderMethodName);
+            } else {
+                valueInstantiator = findValueInstantiator(ctxt, builderDescRef);
+            }
         } catch (NoClassDefFoundError error) {
             return new ErrorThrowingDeserializer(error);
         } catch (IllegalArgumentException e) {
@@ -393,6 +404,63 @@ public class BeanDeserializerFactory
             }
         }
         return (ValueDeserializer<Object>) deserializer;
+    }
+
+    /**
+     * Helper method for resolving static factory method of the value class
+     * (see {@code @JsonDeserialize(builderMethod=...)}) into a {@link ValueInstantiator}
+     * that constructs builder instances.
+     */
+    private ValueInstantiator _builderMethodInstantiator(DeserializationContext ctxt,
+            BeanDescription.Supplier valueBeanDescRef, Class<?> builderClass, String methodName)
+    {
+        final Class<?> valueClass = valueBeanDescRef.getBeanClass();
+        final String desc = "%s.%s()".formatted(ClassUtil.nameOf(valueClass), methodName);
+        Method m = null;
+        for (Class<?> c = valueClass; (c != null) && (c != Object.class); c = c.getSuperclass()) {
+            try {
+                m = c.getDeclaredMethod(methodName);
+                break;
+            } catch (NoSuchMethodException e) { }
+        }
+        if (m == null) {
+            throw InvalidDefinitionException.from(ctxt.getParser(),
+                    "Invalid builder method %s: no no-argument method with that name found"
+                    .formatted(desc), valueBeanDescRef, null);
+        }
+        if (!Modifier.isStatic(m.getModifiers())) {
+            throw InvalidDefinitionException.from(ctxt.getParser(),
+                    "Invalid builder method %s: method is not static".formatted(desc),
+                    valueBeanDescRef, null);
+        }
+        if (!builderClass.isAssignableFrom(m.getReturnType())) {
+            throw InvalidDefinitionException.from(ctxt.getParser(),
+                    "Invalid builder method %s: return type %s is not assignable to builder type %s"
+                    .formatted(desc, ClassUtil.nameOf(m.getReturnType()), ClassUtil.nameOf(builderClass)),
+                    valueBeanDescRef, null);
+        }
+        final DeserializationConfig config = ctxt.getConfig();
+        if (config.canOverrideAccessModifiers()) {
+            ClassUtil.checkAndFixAccess(m, config.isEnabled(MapperFeature.OVERRIDE_PUBLIC_ACCESS_MODIFIERS));
+        }
+        final Method factory = m;
+        return new ValueInstantiator.Base(builderClass) {
+            @Override
+            public boolean canCreateUsingDefault() { return true; }
+
+            @Override
+            public Object createUsingDefault(DeserializationContext ctxt0) {
+                try {
+                    return factory.invoke(null);
+                } catch (Exception e) {
+                    Throwable t = e;
+                    if ((t instanceof InvocationTargetException) && (t.getCause() != null)) {
+                        t = t.getCause();
+                    }
+                    return ctxt0.handleInstantiationProblem(getValueClass(), null, t);
+                }
+            }
+        };
     }
 
     protected void addObjectIdReader(DeserializationContext ctxt,

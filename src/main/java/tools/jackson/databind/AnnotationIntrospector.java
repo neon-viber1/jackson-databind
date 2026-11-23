@@ -1192,6 +1192,20 @@ public abstract class AnnotationIntrospector
     }
 
     /**
+     * Method for finding name of the static, no-argument factory method of
+     * the value class to use for constructing builder instances, if any.
+     *
+     * @param ac Annotated value class to introspect
+     *
+     * @return Name of the method, or {@code null} if none specified
+     *
+     * @since 3.4
+     */
+    public String findPOJOBuilderMethod(MapperConfig<?> config, AnnotatedClass ac) {
+        return null;
+    }
+
+    /**
      * @param ac Annotated class to introspect
      */
     public JsonPOJOBuilder.Value findPOJOBuilderConfig(MapperConfig<?> config, AnnotatedClass ac) {

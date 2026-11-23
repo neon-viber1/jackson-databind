@@ -98,6 +98,24 @@ public @interface JsonDeserialize
     public Class<?> builder() default Void.class;
 
     /**
+     * Optional property for specifying name of a static, no-argument method of
+     * the annotated value class that is used for constructing the builder instance,
+     * instead of using a constructor or Creator of the {@link #builder()} class.
+     * Useful when the builder class cannot be (or need not be) instantiated directly,
+     * for example when a concrete builder implementation is not accessible from
+     * the annotation (like Lombok {@code @SuperBuilder}).
+     *<p>
+     * Return type of the method must be assignable to the class specified
+     * with {@link #builder()}, which must also be specified.
+     * Method need not be public.
+     *<p>
+     * Defaults to empty String, meaning that the method is not used.
+     *
+     * @since 3.4
+     */
+    public String builderMethod() default "";
+
+    /**
      * Optional property for specifying the prefix used for builder
      * "with" methods when using {@link #builder()}. When set to a non-default value
      * (something other than {@link #USE_DEFAULT_PREFIX}), this overrides any
